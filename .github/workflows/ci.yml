@@ -2,9 +2,6 @@ name: CI
 
 on:
   push:
-    branches:
-      - v1.x
-      - ci-test
   pull_request:
     branches:
       - v1.x
@@ -15,6 +12,7 @@ defaults:
 
 jobs:
   commit-msg:
+    if: false
     name: Commit message check
     runs-on: ubuntu-22.04
     strategy:
@@ -62,6 +60,7 @@ jobs:
           exit 1;
         fi
   clang-format:
+    if: false
     name: Code formatting check
     runs-on: ubuntu-22.04
     strategy:
@@ -102,6 +101,7 @@ jobs:
           )
         done
   cmake-minimum:
+    if: false
     name: Baseline cmake check
     needs: [commit-msg, clang-format]
     runs-on: ubuntu-22.04
@@ -130,41 +130,29 @@ jobs:
         /tmp/cmake-2.8.12.2-Linux-i386/bin/cmake -DCMAKE_BUILD_TYPE=Debug ..
   windows:
     name: Windows
-    needs: [commit-msg, clang-format]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        name: [ VS2015 x86 Development, VS2015 x64 Development, VS2015 x64 Release, VS2022 x64 Development, VS2022 x64 Release ]
         include:
-          - name: VS2015 x86 Development
+          - name: VS2022 x86 Development
             os: windows-2025
-            compiler: VS2015
-            toolset: v140
+            toolset: v145
             platform: x86
             configuration: Development
-          - name: VS2015 x64 Development
+          - name: VS2022 x86 Release
             os: windows-2025
-            compiler: VS2015
-            toolset: v140
-            platform: x64
-            configuration: Development
-          - name: VS2015 x64 Release
-            os: windows-2025
-            compiler: VS2015
-            toolset: v140
-            platform: x64
+            toolset: v145
+            platform: x86
             configuration: Release
           - name: VS2022 x64 Development
             os: windows-2025
-            compiler: VS2022
-            toolset: v143
+            toolset: v145
             platform: x64
             configuration: Development
           - name: VS2022 x64 Release
             os: windows-2025
-            compiler: VS2015
-            toolset: v143
+            toolset: v145
             platform: x64
             configuration: Release
     steps:
@@ -284,9 +272,35 @@ jobs:
         7z x qrenderdoc_3rdparty.zip
     - name: Set up Visual Studio tools
       uses: microsoft/setup-msbuild@v3
+    - uses: hendrikmuhs/ccache-action@v1.2.23
+      with:
+        verbose: 2
+        variant: sccache
+    - uses: Trass3r/setup-cpp@master
+    - shell: powershell
+      run: |
+        #Copy-Item C:\ProgramData\Chocolatey\lib\mingw\tools\install\mingw64\bin\ccache.exe -Destination .\CL.exe
+        # set CL=/DACTIVATE#1
     - name: Building solution
-      run: msbuild.exe renderdoc.sln "/m" "/p:Configuration=${{ matrix.configuration }}" "/p:Platform=${{ matrix.platform }}" "/p:PlatformToolset=${{ matrix.toolset }}"
-      shell: powershell
+      run: |
+        shopt -s globstar
+        ln -s $(which sccache) $(dirname $(which sccache))/CL.exe
+        ls -la **/*.vcxproj
+        sed -i -e 's/ProgramDatabase/OldStyle/g' -e 's/>Use</>NotUsing</g' **/*.vcxproj
+        #CCACHE_COMPILER=cl \
+        msbuild.exe renderdoc.sln -p:Configuration=${{ matrix.configuration }} -p:Platform=${{ matrix.platform }} -p:PlatformToolset=${{ matrix.toolset }} \
+        -p:CLToolPath=$(dirname $(which sccache)) -p:UseMultiToolTask=true #-p:DebugInformationFormat=OldStyle
+    - uses: actions/upload-artifact@v7
+      with:
+        name: build-${{ matrix.configuration }}
+        path: |
+          */${{ matrix.configuration }}/*
+          !*/${{ matrix.configuration }}/obj*
+          !*/${{ matrix.configuration }}/pymodules*
+          !*/${{ matrix.configuration }}/*.ilk
+          !*/${{ matrix.configuration }}/*.exp
+          !*/${{ matrix.configuration }}/*.lib
+          !*/${{ matrix.configuration }}/driver*.pdb
     - if: matrix.configuration == 'Development'
       name: Running core unit tests
       run: |
@@ -302,6 +316,7 @@ jobs:
           exit 1;
         fi
   docs:
+    if: false
     name: Documentation Build
     needs: [commit-msg, clang-format]
     runs-on: ubuntu-22.04
@@ -330,6 +345,7 @@ jobs:
         make html SPHINXOPTS=-W
         python3 verify-docstrings.py
   linux:
+    if: false
     name: Linux
     needs: [commit-msg, clang-format]
     runs-on: ubuntu-22.04
@@ -405,6 +421,7 @@ jobs:
           exit 1;
         fi
   android:
+    if: false
     name: Android
     needs: [commit-msg, clang-format]
     runs-on: ubuntu-22.04
@@ -442,6 +459,7 @@ jobs:
         make -j2
         popd
   macOS:
+    if: false
     name: Mac
     needs: [commit-msg, clang-format]
     runs-on: macos-14
