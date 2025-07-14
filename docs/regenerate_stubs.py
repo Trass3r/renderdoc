@@ -25,16 +25,18 @@ else:
     binpath = os.path.abspath(os.path.join(docsdir, '../Win32/'))
 
 # Prioritise release over development builds
-sys.path.insert(0, os.path.abspath(binpath + '/Development/pymodules'))
-sys.path.insert(0, os.path.abspath(binpath + '/Release/pymodules'))
+sys.path.insert(0, os.path.abspath(os.path.join(binpath, 'Development/pymodules')))
+sys.path.insert(0, os.path.abspath(os.path.join(binpath, 'Release/pymodules')))
 
 # Add the build paths to PATH so renderdoc.dll can be located
-os.environ["PATH"] += os.pathsep + os.path.abspath(binpath + '/Development/')
-os.environ["PATH"] += os.pathsep + os.path.abspath(binpath + '/Release/')
+os.environ["PATH"] += os.pathsep + os.path.abspath(os.path.join(binpath, 'Release/'))
+os.environ["PATH"] += os.pathsep + os.path.abspath(os.path.join(binpath, 'Development/'))
 
 if sys.platform == 'win32' and sys.version_info[1] >= 8:
-    os.add_dll_directory(binpath + '/Release/')
-    os.add_dll_directory(binpath + '/Development/')
+    if os.path.exists(os.path.join(binpath, 'Release/')):
+        os.add_dll_directory(os.path.abspath(os.path.join(binpath, 'Release/')))
+    if os.path.exists(os.path.join(binpath, 'Development/')):
+        os.add_dll_directory(os.path.abspath(os.path.join(binpath, 'Development/')))
 
 # path to module libraries for linux
 sys.path.insert(0, os.path.abspath(os.path.join(docsdir, '../build/lib')))
@@ -48,5 +50,5 @@ if __name__ == '__main__':
 from stubs_generation.helpers import generator3
 
 if __name__ == '__main__':
-    generator3.main(['renderdoc', '-d', destpath])
-    generator3.main(['qrenderdoc', '-d', destpath])
+    generator3.main(['renderdoc', '-d', destpath, '-v'])
+    generator3.main(['qrenderdoc', '-d', destpath, '-v'])

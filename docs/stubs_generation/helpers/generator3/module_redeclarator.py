@@ -205,18 +205,18 @@ class ModuleRedeclarator(object):
             import_types.add(type_decl)
             return
 
-        match = re.match('^[tT]uple\[(.*)\]$', type_decl)
+        match = re.match(r'^[tT]uple\[(.*)\]$', type_decl)
         if match:
             for i in match.group(1).split(','):
                 self.add_import_types(import_types, i.strip())
             return
 
-        match = re.match('^[lL]ist\[(.*)\]$', type_decl)
+        match = re.match(r'^[lL]ist\[(.*)\]$', type_decl)
         if match:
             self.add_import_types(import_types, match.group(1).strip())
             return
 
-        match = re.match('^[cC]allable\[\[(.*)\]\s*,\s*(.*)\]$', type_decl)
+        match = re.match(r'^[cC]allable\[\[(.*)\]\s*,\s*(.*)\]$', type_decl)
         if match:
             for i in match.group(1).split(','):
                 self.add_import_types(import_types, i.strip())
