@@ -47,31 +47,6 @@ jobs:
       with:
         fetch-depth: 5
 
-    - name: Install VSSetup
-      run: Install-Module VSSetup -Scope CurrentUser
-      shell: powershell
-
-    - name: Show installed toolsets
-      run: |
-        echo "--- All:"
-        Get-VSSetupInstance -All
-        echo "--- VC140:"
-        Get-VSSetupInstance -All | Select-VSSetupInstance -Latest -Require Microsoft.VisualStudio.Component.VC.140
-      shell: powershell
-
-    - if: matrix.toolset == 'v140'
-      name: Install missing Visual Studio components
-      run: python .github/workflows/install-vs-components.py
-
-    - if: matrix.toolset == 'v140'
-      name: Show installed toolsets
-      run: |
-        echo "--- All:"
-        Get-VSSetupInstance -All
-        echo "--- VC140:"
-        Get-VSSetupInstance -All | Select-VSSetupInstance -Latest -Require Microsoft.VisualStudio.Component.VC.140
-      shell: powershell
-
     - name: Download optional 3rdparty extras
       run: |
         curl https://renderdoc.org/qrenderdoc_3rdparty.zip -O
@@ -81,13 +56,16 @@ jobs:
     - name: Building solution
       run: msbuild.exe renderdoc.sln -p:UseMultiToolTask=true "/p:Configuration=${{ matrix.configuration }}" "/p:Platform=${{ matrix.platform }}" "/p:PlatformToolset=${{ matrix.toolset }}"
       shell: powershell
+    - run: |
+        cd docs
+        python regenerate_stubs.py ../stubs
     - uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.name }}
         path: |
+          stubs
           */${{ matrix.configuration }}/*
           !*/${{ matrix.configuration }}/obj*
-          !*/${{ matrix.configuration }}/pymodules*
           !*/${{ matrix.configuration }}/*.ilk
           !*/${{ matrix.configuration }}/*.exp
           !*/${{ matrix.configuration }}/*.lib
