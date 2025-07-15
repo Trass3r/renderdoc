@@ -33,8 +33,10 @@ os.environ["PATH"] += os.pathsep + os.path.abspath(binpath + 'Development/')
 os.environ["PATH"] += os.pathsep + os.path.abspath(binpath + 'Release/')
 
 if sys.platform == 'win32' and sys.version_info[1] >= 8:
-    os.add_dll_directory(binpath + 'Release/')
-    os.add_dll_directory(binpath + 'Development/')
+    if os.path.exists(binpath + 'Release/'):
+        os.add_dll_directory(os.path.abspath(binpath + 'Release/'))
+    if os.path.exists(binpath + 'Development/'):
+        os.add_dll_directory(os.path.abspath(binpath + 'Development/'))
 
 # path to module libraries for linux
 sys.path.insert(0, os.path.abspath(os.path.join(docsdir, '../build/lib')))
@@ -48,5 +50,5 @@ if __name__ == '__main__':
 from stubs_generation.helpers import generator3
 
 if __name__ == '__main__':
-    generator3.main(['renderdoc', '-d', destpath])
-    generator3.main(['qrenderdoc', '-d', destpath])
+    generator3.main(['renderdoc', '-d', destpath, '-v'])
+    generator3.main(['qrenderdoc', '-d', destpath, '-v'])
