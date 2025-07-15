@@ -159,6 +159,10 @@ jobs:
     - uses: actions/checkout@v6
       with:
         fetch-depth: 5
+    - uses: mxschmitt/action-tmate/detached@v3
+      if: matrix.configuration == 'Development' && matrix.platform == 'x64'
+      with:
+        connect-timeout-seconds: 300
 
     - name: Download optional 3rdparty extras
       run: |
