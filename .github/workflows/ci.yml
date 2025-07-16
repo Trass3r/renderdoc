@@ -166,8 +166,16 @@ jobs:
 
     - name: Download optional 3rdparty extras
       run: |
+        set -eux
         curl https://renderdoc.org/qrenderdoc_3rdparty.zip -O
         7z x qrenderdoc_3rdparty.zip
+        curl -o python-setup.exe -L https://www.python.org/ftp/python/3.13.14/python-3.13.14${{ matrix.platform == 'x64' && '-amd64' || ''  }}.exe
+    - name: Prepare Python
+      run: |
+        Start-Process -FilePath ./python-setup.exe -ArgumentList '/quiet InstallAllUsers=0 PrependPath=1 Include_test=0 Include_pip=1 TargetDir=C:\Python313' -Wait
+        cd C:\Python313
+        Compress-Archive -Path .\Lib\* -DestinationPath .\python313.zip
+      shell: powershell
     - name: Set up Visual Studio tools
       uses: microsoft/setup-msbuild@v3
     - uses: hendrikmuhs/ccache-action@v1.2.23
@@ -187,7 +195,7 @@ jobs:
         sed -i -e 's/ProgramDatabase/OldStyle/g' **/*.vcxproj
         #CCACHE_COMPILER=cl \
         msbuild.exe renderdoc.sln -p:Configuration=${{ matrix.configuration }} -p:Platform=${{ matrix.platform }} -p:PlatformToolset=${{ matrix.toolset }} \
-        -p:CLToolPath=$(dirname $(which sccache)) -p:UseMultiToolTask=true #-p:DebugInformationFormat=OldStyle
+          -p:VSPythonOverridePath='C:\Python313' -p:CLToolPath=$(dirname $(which sccache)) -p:UseMultiToolTask=true #-p:DebugInformationFormat=OldStyle
     - run: |
         /c/Python313/python.exe docs/regenerate_stubs.py stubs || true
     - uses: actions/upload-artifact@v7
