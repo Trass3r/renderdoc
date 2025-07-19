@@ -1978,6 +1978,12 @@ ResourceId D3D12Replay::RenderOverlay(ResourceId texid, FloatVector clearCol, De
     if(overlay == DebugOverlay::QuadOverdrawPass)
       m_pDevice->ReplayLog(0, eventId, eReplay_WithoutDraw);
   }
+  else if(overlay == DebugOverlay::PixelOverdrawPass)
+  {
+    // TODO: Implement PixelOverdrawPass for D3D12
+    // For now, fallback to no overlay behavior  
+    RDCLOG("PixelOverdrawPass overlay not yet implemented for D3D12");
+  }
   else if(overlay == DebugOverlay::Depth || overlay == DebugOverlay::Stencil)
   {
     if(pipe && pipe->IsGraphics())

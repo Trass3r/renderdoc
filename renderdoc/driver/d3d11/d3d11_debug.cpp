@@ -1128,6 +1128,11 @@ void D3D11Replay::OverlayRendering::Init(WrappedID3D11Device *device)
 
     QuadOverdrawPS = shaderCache->MakePShader(hlsl.c_str(), "RENDERDOC_QuadOverdrawPS", "ps_5_0");
     QOResolvePS = shaderCache->MakePShader(hlsl.c_str(), "RENDERDOC_QOResolvePS", "ps_5_0");
+
+    hlsl = GetEmbeddedResource(pixeloverdraw_hlsl);
+
+    PixelOverdrawPS = shaderCache->MakePShader(hlsl.c_str(), "RENDERDOC_PixelOverdrawPS", "ps_5_0");
+    POResolvePS = shaderCache->MakePShader(hlsl.c_str(), "RENDERDOC_POResolvePS", "ps_5_0");
   }
 
   {
@@ -1183,6 +1188,8 @@ void D3D11Replay::OverlayRendering::Release()
   SAFE_RELEASE(FullscreenVS);
   SAFE_RELEASE(QuadOverdrawPS);
   SAFE_RELEASE(QOResolvePS);
+  SAFE_RELEASE(PixelOverdrawPS);
+  SAFE_RELEASE(POResolvePS);
   SAFE_RELEASE(TriangleSizeGS);
   SAFE_RELEASE(TriangleSizePS);
   SAFE_RELEASE(DepthCopyPS);

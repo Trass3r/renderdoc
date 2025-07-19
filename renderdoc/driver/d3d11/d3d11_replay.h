@@ -443,6 +443,8 @@ private:
     ID3D11VertexShader *FullscreenVS = NULL;
     ID3D11PixelShader *QuadOverdrawPS = NULL;
     ID3D11PixelShader *QOResolvePS = NULL;
+    ID3D11PixelShader *PixelOverdrawPS = NULL;
+    ID3D11PixelShader *POResolvePS = NULL;
     ID3D11PixelShader *TriangleSizePS = NULL;
     ID3D11PixelShader *DepthCopyPS = NULL;
     ID3D11PixelShader *DepthCopyArrayPS = NULL;
