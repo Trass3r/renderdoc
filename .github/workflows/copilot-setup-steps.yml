@@ -1,4 +1,4 @@
-name: Copilot Setup Verification
+name: Copilot Setup
 
 on:
   push:
@@ -9,35 +9,18 @@ defaults:
     shell: bash
 
 jobs:
-  copilot-setup-test:
-    name: Copilot Setup Test
-    runs-on: ubuntu-22.04
+  copilot-setup-steps:
+    name: Copilot Setup
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
     env:
       QT_SELECT: qt5
     steps:
     - uses: actions/checkout@v4
       with:
-        fetch-depth: 5
+        fetch-depth: 1
     - name: Install compilation dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libx11-dev mesa-common-dev libgl1-mesa-dev qtbase5-dev libqt5svg5-dev libqt5x11extras5-dev libxcb-keysyms1-dev libx11-xcb-dev g++-11 libpcre3-dev xvfb
-    - name: Build
-      run: |
-        mkdir build
-        pushd build
-        CC=gcc-11 CXX=g++-11 cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS_DEBUG="-g -Wno-implicit-fallthrough" ..
-        make -j2
-        popd
-    - name: Run core unit tests
-      run: |
-        if ! ./build/bin/renderdoccmd test unit -o test.log; then
-          echo "::error::$(cat test.log)" | tr '\n' '\001' | sed -e 's#\x01#%0A#g';
-          exit 1;
-        fi
-    - name: Run UI unit tests
-      run: |
-        if ! xvfb-run -a ./build/bin/qrenderdoc --unittest log=test.log; then
-          echo "::error::$(cat test.log)" | tr '\n' '\001' | sed -e 's#\x01#%0A#g';
-          exit 1;
-        fi
+        sudo apt-get install -y libx11-dev mesa-common-dev libgl1-mesa-dev qtbase5-dev libqt5svg5-dev libqt5x11extras5-dev libxcb-keysyms1-dev libx11-xcb-dev cmake g++ libpcre3-dev xvfb
