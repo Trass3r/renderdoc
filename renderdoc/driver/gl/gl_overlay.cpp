@@ -2019,7 +2019,7 @@ ResourceId GLReplay::RenderOverlay(ResourceId texid, FloatVector clearCol, Debug
         ReplayLog(eventId, eReplay_WithoutDraw);
     }
   }
-  else if(overlay == DebugOverlay::QuadOverdrawDraw || overlay == DebugOverlay::QuadOverdrawPass)
+  else if(overlay == DebugOverlay::QuadOverdrawDraw || overlay == DebugOverlay::QuadOverdrawPass || overlay == DebugOverlay::PixelOverdrawPass)
   {
     if(DebugData.quadoverdrawFragShader)
     {
@@ -2052,9 +2052,14 @@ ResourceId GLReplay::RenderOverlay(ResourceId texid, FloatVector clearCol, Debug
 
         // image for quad usage
         drv.glBindTexture(eGL_TEXTURE_2D_ARRAY, quadtexs[1]);
-        drv.glTextureImage3DEXT(quadtexs[1], eGL_TEXTURE_2D_ARRAY, 0, eGL_R32UI,
-                                RDCMAX(1, outWidth >> 1), RDCMAX(1, outHeight >> 1), 4, 0,
-                                eGL_RED_INTEGER, eGL_UNSIGNED_INT, NULL);
+        if (overlay == DebugOverlay::QuadOverdrawPass || overlay == DebugOverlay::QuadOverdrawDraw)
+          drv.glTextureImage3DEXT(quadtexs[1], eGL_TEXTURE_2D_ARRAY, 0, eGL_R32UI,
+                                  RDCMAX(1, outWidth >> 1), RDCMAX(1, outHeight >> 1), 4, 0,
+                                  eGL_RED_INTEGER, eGL_UNSIGNED_INT, NULL);
+        else
+          drv.glTextureImage2DEXT(quadtexs[1], eGL_TEXTURE_2D, 0, eGL_R32UI,
+                                  RDCMAX(1, outWidth >> 1), RDCMAX(1, outHeight >> 1), 0,
+                                  eGL_RED_INTEGER, eGL_UNSIGNED_INT, NULL);
         drv.glTextureParameteriEXT(quadtexs[1], eGL_TEXTURE_2D_ARRAY, eGL_TEXTURE_MAX_LEVEL, 0);
 
         // temporarily attach to FBO to clear it
@@ -2085,7 +2090,7 @@ ResourceId GLReplay::RenderOverlay(ResourceId texid, FloatVector clearCol, Debug
 
         GLuint curDepth = 0, depthType = 0;
 
-        if(overlay == DebugOverlay::QuadOverdrawPass)
+        if(overlay == DebugOverlay::QuadOverdrawPass || overlay == DebugOverlay::PixelOverdrawPass)
           ReplayLog(events[0], eReplay_WithoutDraw);
         else
           rs.ApplyState(m_pDriver);
@@ -2241,7 +2246,7 @@ ResourceId GLReplay::RenderOverlay(ResourceId texid, FloatVector clearCol, Debug
               RDCERR("Couldn't get location of overdrawImage");
           }
 
-          if(overlay == DebugOverlay::QuadOverdrawPass && overridedepth)
+          if((overlay == DebugOverlay::QuadOverdrawPass || overlay == DebugOverlay::PixelOverdrawPass) && overridedepth)
             drv.CopyTex2DMSToArray(overridedepth, curDepth, outWidth, outHeight, depthSlices,
                                    depthSamples, fmt);
 
@@ -2267,7 +2272,7 @@ ResourceId GLReplay::RenderOverlay(ResourceId texid, FloatVector clearCol, Debug
             drv.glStencilMaskSeparate(eGL_BACK, (GLuint)stencilbmask);
           }
 
-          if(overlay == DebugOverlay::QuadOverdrawPass)
+          if(overlay == DebugOverlay::QuadOverdrawPass || overlay == DebugOverlay::PixelOverdrawPass)
           {
             m_pDriver->ReplayLog(0, events[i], eReplay_OnlyDraw);
 
@@ -2324,245 +2329,8 @@ ResourceId GLReplay::RenderOverlay(ResourceId texid, FloatVector clearCol, Debug
         drv.glDeleteTextures(2, quadtexs);
         drv.glDeleteTextures(1, &overridedepth);
 
-        if(overlay == DebugOverlay::QuadOverdrawPass)
+        if(overlay == DebugOverlay::QuadOverdrawPass || overlay == DebugOverlay::PixelOverdrawPass)
           ReplayLog(eventId, eReplay_WithoutDraw);
-      }
-    }
-  }
-  else if(overlay == DebugOverlay::PixelOverdrawPass)
-  {
-    if(DebugData.pixeloverdrawFragShader)
-    {
-      SCOPED_TIMER("Pixel Overdraw");
-
-      if(HasExt[ARB_viewport_array])
-        drv.glDisablei(eGL_SCISSOR_TEST, 0);
-      else
-        drv.glDisable(eGL_SCISSOR_TEST);
-
-      float black[] = {0.0f, 0.0f, 0.0f, 0.0f};
-      drv.glClearBufferfv(eGL_COLOR, 0, black);
-
-      rdcarray<uint32_t> events = passEvents;
-      events.push_back(eventId);
-
-      if(!events.empty())
-      {
-        GLuint replacefbo = 0;
-        GLuint overridedepth = 0;
-        GLuint pixeltex = 0;
-        drv.glGenFramebuffers(1, &replacefbo);
-        drv.glBindFramebuffer(eGL_FRAMEBUFFER, replacefbo);
-
-        drv.glGenTextures(1, &pixeltex);
-
-        // image for pixel usage - simple 2D texture, no need for arrays
-        drv.glBindTexture(eGL_TEXTURE_2D, pixeltex);
-        drv.glTextureImage2DEXT(pixeltex, eGL_TEXTURE_2D, 0, eGL_R32UI,
-                                outWidth, outHeight, 0,
-                                eGL_RED_INTEGER, eGL_UNSIGNED_INT, NULL);
-        drv.glTextureParameteriEXT(pixeltex, eGL_TEXTURE_2D, eGL_TEXTURE_MAX_LEVEL, 0);
-
-        // temporarily attach to FBO to clear it
-        GLint zero[4] = {0};
-        drv.glFramebufferTexture2D(eGL_FRAMEBUFFER, eGL_COLOR_ATTACHMENT0, eGL_TEXTURE_2D, pixeltex, 0);
-        drv.glClearBufferiv(eGL_COLOR, 0, zero);
-
-        GLuint curdrawfbo = 0, curreadfbo = 0;
-
-        GLuint curDepth = 0, depthType = 0;
-
-        ReplayLog(events[0], eReplay_WithoutDraw);
-
-        drv.glGetIntegerv(eGL_DRAW_FRAMEBUFFER_BINDING, (GLint *)&curdrawfbo);
-        drv.glGetIntegerv(eGL_READ_FRAMEBUFFER_BINDING, (GLint *)&curreadfbo);
-
-        // TODO handle non-2D depth/stencil attachments and fetch slice or cubemap face
-        GLint mip = 0;
-
-        drv.glGetNamedFramebufferAttachmentParameterivEXT(curdrawfbo, eGL_DEPTH_ATTACHMENT,
-                                                          eGL_FRAMEBUFFER_ATTACHMENT_OBJECT_NAME,
-                                                          (GLint *)&curDepth);
-        drv.glGetNamedFramebufferAttachmentParameterivEXT(curdrawfbo, eGL_DEPTH_ATTACHMENT,
-                                                          eGL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE,
-                                                          (GLint *)&depthType);
-
-        GLenum fmt = eGL_DEPTH32F_STENCIL8;
-
-        GLenum depthEnum = eGL_TEXTURE_2D;
-        uint32_t depthSlices = 1, depthSamples = 1;
-
-        if(curDepth)
-        {
-          if(depthType == eGL_TEXTURE)
-          {
-            ResourceId id = m_pDriver->GetResourceManager()->GetResID(TextureRes(ctx, curDepth));
-            WrappedOpenGL::TextureData &depthdetails = m_pDriver->m_Textures[id];
-
-            depthSamples = depthdetails.samples;
-            depthSlices = RDCMAX(1U, (uint32_t)depthdetails.depth);
-
-            if(depthdetails.curType == eGL_TEXTURE_2D_MULTISAMPLE ||
-               depthdetails.curType == eGL_TEXTURE_2D_MULTISAMPLE_ARRAY)
-            {
-              depthEnum = depthdetails.curType;
-            }
-            else if(depthdetails.curType == eGL_TEXTURE_CUBE_MAP ||
-                    depthdetails.curType == eGL_TEXTURE_CUBE_MAP_ARRAY ||
-                    depthdetails.curType == eGL_TEXTURE_1D_ARRAY ||
-                    depthdetails.curType == eGL_TEXTURE_2D_ARRAY)
-            {
-              depthEnum = eGL_TEXTURE_2D_ARRAY;
-              depthSlices = depthdetails.depth;
-            }
-
-            fmt = depthdetails.internalFormat;
-
-            drv.glGetNamedFramebufferAttachmentParameterivEXT(curdrawfbo, eGL_DEPTH_ATTACHMENT,
-                                                              eGL_FRAMEBUFFER_ATTACHMENT_TEXTURE_LEVEL,
-                                                              &mip);
-          }
-        }
-
-        if(curDepth && depthSamples > 1)
-        {
-          if(depthEnum == eGL_TEXTURE_2D_MULTISAMPLE)
-          {
-            drv.glGenTextures(1, &overridedepth);
-            drv.glBindTexture(eGL_TEXTURE_2D_MULTISAMPLE, overridedepth);
-            drv.glTextureStorage2DMultisampleEXT(overridedepth, eGL_TEXTURE_2D_MULTISAMPLE,
-                                                 depthSamples, fmt, outWidth, outHeight, GL_TRUE);
-          }
-          else if(depthEnum == eGL_TEXTURE_2D_MULTISAMPLE_ARRAY)
-          {
-            drv.glGenTextures(1, &overridedepth);
-            drv.glBindTexture(eGL_TEXTURE_2D_MULTISAMPLE_ARRAY, overridedepth);
-            drv.glTextureStorage3DMultisampleEXT(overridedepth, eGL_TEXTURE_2D_MULTISAMPLE_ARRAY,
-                                                 depthSamples, fmt, outWidth, outHeight, depthSlices, GL_TRUE);
-          }
-        }
-
-        drv.glBindImageTexture(0, pixeltex, 0, GL_FALSE, 0, eGL_READ_WRITE, eGL_R32UI);
-
-        for(size_t i = 0; i < events.size(); i++)
-        {
-          GLRenderState oldstate = rs;
-
-          // disable all writing
-          drv.glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-          drv.glDepthMask(GL_FALSE);
-          drv.glStencilMask(0);
-
-          GLuint prog = 0, pipe = 0;
-          drv.glGetIntegerv(eGL_CURRENT_PROGRAM, (GLint *)&prog);
-          drv.glGetIntegerv(eGL_PROGRAM_PIPELINE_BINDING, (GLint *)&pipe);
-
-          drv.glBindFramebuffer(eGL_DRAW_FRAMEBUFFER, replacefbo);
-          drv.glBindFramebuffer(eGL_READ_FRAMEBUFFER, replacefbo);
-
-          drv.glFramebufferTexture2D(eGL_FRAMEBUFFER, eGL_COLOR_ATTACHMENT0, eGL_TEXTURE_2D, 0, 0);
-
-          if(overridedepth)
-          {
-            if(depthEnum == eGL_TEXTURE_2D_MULTISAMPLE)
-              drv.glFramebufferTexture2D(eGL_FRAMEBUFFER, eGL_DEPTH_STENCIL_ATTACHMENT,
-                                         eGL_TEXTURE_2D_MULTISAMPLE, overridedepth, 0);
-            else if(depthEnum == eGL_TEXTURE_2D_MULTISAMPLE_ARRAY)
-              drv.glFramebufferTextureLayer(eGL_FRAMEBUFFER, eGL_DEPTH_STENCIL_ATTACHMENT,
-                                            overridedepth, 0, sub.slice);
-
-            drv.CopyTex2DMSToArray(overridedepth, curDepth, outWidth, outHeight, depthSlices,
-                                   depthSamples, fmt);
-          }
-          else
-          {
-            if(curDepth)
-            {
-              if(depthEnum == eGL_TEXTURE_2D)
-                drv.glFramebufferTexture2D(eGL_FRAMEBUFFER, eGL_DEPTH_STENCIL_ATTACHMENT,
-                                           eGL_TEXTURE_2D, curDepth, mip);
-              else if(depthEnum == eGL_TEXTURE_2D_ARRAY)
-                drv.glFramebufferTextureLayer(eGL_FRAMEBUFFER, eGL_DEPTH_STENCIL_ATTACHMENT,
-                                              curDepth, mip, sub.slice);
-            }
-          }
-
-          bool spirvOverlay = CreateFragmentShaderReplacementProgram(
-              prog, DebugData.overlayProg, pipe, DebugData.pixeloverdrawFragShader,
-              DebugData.pixeloverdrawFragShaderSPIRV);
-
-          drv.glUseProgram(DebugData.overlayProg);
-
-          GLint loc = -1;
-
-          if(spirvOverlay)
-            loc = 0;
-          else
-            loc = drv.glGetUniformLocation(DebugData.overlayProg, "overdrawImage");
-
-          if(loc >= 0)
-          {
-            drv.glUniform1i(loc, 0);
-          }
-          else
-          {
-            RDCERR("Couldn't get location of overdrawImage");
-          }
-
-          m_pDriver->ReplayLog(0, events[i], eReplay_OnlyDraw);
-
-          // pop the state that we messed with
-          oldstate.ApplyState(m_pDriver);
-
-          m_pDriver->ReplayLog(0, events[i], eReplay_OnlyDraw);
-
-          if(i + 1 < events.size())
-            m_pDriver->ReplayLog(events[i] + 1, events[i + 1], eReplay_WithoutDraw);
-        }
-
-        // resolve pass
-        {
-          drv.glUseProgram(DebugData.pixeloverdrawResolveProg);
-          drv.glBindProgramPipeline(0);
-
-          // modify our fbo to attach the overlay texture instead
-          drv.glBindFramebuffer(eGL_FRAMEBUFFER, replacefbo);
-          if(texBindingEnum == eGL_TEXTURE_2D_ARRAY ||
-             texBindingEnum == eGL_TEXTURE_2D_MULTISAMPLE_ARRAY)
-          {
-            drv.glFramebufferTextureLayer(eGL_FRAMEBUFFER, eGL_COLOR_ATTACHMENT0,
-                                          DebugData.overlayTex, sub.mip, sub.slice);
-            drv.glFramebufferTextureLayer(eGL_FRAMEBUFFER, eGL_DEPTH_STENCIL_ATTACHMENT, 0, 0, 0);
-          }
-          else
-          {
-            drv.glFramebufferTexture2D(eGL_FRAMEBUFFER, eGL_COLOR_ATTACHMENT0, texBindingEnum,
-                                       DebugData.overlayTex, sub.mip);
-            drv.glFramebufferTexture2D(eGL_FRAMEBUFFER, eGL_DEPTH_STENCIL_ATTACHMENT,
-                                       texBindingEnum, 0, 0);
-          }
-
-          drv.glActiveTexture(eGL_TEXTURE0);
-          drv.glBindTexture(eGL_TEXTURE_2D, pixeltex);
-
-          drv.glDisable(eGL_BLEND);
-          drv.glDisable(eGL_SCISSOR_TEST);
-          drv.glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-          drv.glDepthMask(GL_FALSE);
-          drv.glDisable(eGL_DEPTH_TEST);
-          drv.glDisable(eGL_STENCIL_TEST);
-          drv.glStencilMask(0);
-
-          drv.glViewport(0, 0, outWidth, outHeight);
-
-          drv.glDrawArrays(eGL_TRIANGLE_STRIP, 0, 4);
-        }
-
-        drv.glDeleteFramebuffers(1, &replacefbo);
-        drv.glDeleteTextures(1, &pixeltex);
-        drv.glDeleteTextures(1, &overridedepth);
-
-        ReplayLog(eventId, eReplay_WithoutDraw);
       }
     }
   }

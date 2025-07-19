@@ -2873,7 +2873,7 @@ ResourceId VulkanReplay::RenderOverlay(ResourceId texid, FloatVector clearCol, D
       CHECK_VKR(m_pDriver, vkr);
     }
   }
-  else if(overlay == DebugOverlay::QuadOverdrawPass || overlay == DebugOverlay::QuadOverdrawDraw)
+  else if(overlay == DebugOverlay::QuadOverdrawPass || overlay == DebugOverlay::QuadOverdrawDraw || overlay == DebugOverlay::PixelOverdrawPass)
   {
     if(m_Overlay.m_QuadResolvePipeline[0] != VK_NULL_HANDLE && !state.rastDiscardEnable &&
        m_Overlay.Samples == VK_SAMPLE_COUNT_1_BIT)
@@ -2917,7 +2917,7 @@ ResourceId VulkanReplay::RenderOverlay(ResourceId texid, FloatVector clearCol, D
       // if we're rendering the whole pass, and the first action is a BeginRenderPass, don't include
       // it in the list. We want to start by replaying into the renderpass so that we have the
       // correct state being applied.
-      if(overlay == DebugOverlay::QuadOverdrawPass)
+      if(overlay == DebugOverlay::QuadOverdrawPass || overlay == DebugOverlay::PixelOverdrawPass)
       {
         const ActionDescription *action = m_pDriver->GetAction(events[0]);
         if(action->flags & ActionFlags::BeginPass)
@@ -2929,7 +2929,7 @@ ResourceId VulkanReplay::RenderOverlay(ResourceId texid, FloatVector clearCol, D
       VkDeviceMemory quadImgMem;
       VkImageView quadImgView;
 
-      uint32_t quadImgArraySlices = 4;
+      uint32_t quadImgArraySlices = overlay == DebugOverlay::PixelOverdrawPass ? 1 : 4;
       if(multiviewMask > 0)
       {
         quadImgArraySlices *= Bits::CountOnes(multiviewMask);

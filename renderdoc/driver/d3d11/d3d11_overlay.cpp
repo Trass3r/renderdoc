@@ -930,7 +930,7 @@ ResourceId D3D11Replay::RenderOverlay(ResourceId texid, FloatVector clearCol, De
     if(overlay == DebugOverlay::TriangleSizePass)
       m_pDevice->ReplayLog(0, eventId, eReplay_WithoutDraw);
   }
-  else if(overlay == DebugOverlay::QuadOverdrawPass || overlay == DebugOverlay::QuadOverdrawDraw)
+  else if(overlay == DebugOverlay::QuadOverdrawPass || overlay == DebugOverlay::QuadOverdrawDraw || overlay == DebugOverlay::PixelOverdrawPass)
   {
     SCOPED_TIMER("Quad Overdraw");
 
@@ -943,7 +943,7 @@ ResourceId D3D11Replay::RenderOverlay(ResourceId texid, FloatVector clearCol, De
 
     if(!events.empty())
     {
-      if(overlay == DebugOverlay::QuadOverdrawPass)
+      if(overlay == DebugOverlay::QuadOverdrawPass || overlay == DebugOverlay::PixelOverdrawPass)
         m_pDevice->ReplayLog(0, events[0], eReplay_WithoutDraw);
 
       D3D11RenderState *state = m_pImmediateContext->GetCurrentPipelineState();
@@ -1032,7 +1032,7 @@ ResourceId D3D11Replay::RenderOverlay(ResourceId texid, FloatVector clearCol, De
         viewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
         viewDesc.Texture2DArray.ArraySize = 1;
 
-        if(overlay != DebugOverlay::QuadOverdrawPass)
+        if(overlay != DebugOverlay::QuadOverdrawPass && overlay != DebugOverlay::PixelOverdrawPass)
           m_pDevice->GetDebugManager()->CopyTex2DMSToArray(
               UNWRAP(WrappedID3D11Texture2D1, depthOverrideTex),
               UNWRAP(WrappedID3D11Texture2D1, origDepthTex));
@@ -1045,7 +1045,7 @@ ResourceId D3D11Replay::RenderOverlay(ResourceId texid, FloatVector clearCol, De
           width,
           height,
           1U,
-          4U,
+          overlay == DebugOverlay::QuadOverdrawPass || overlay == DebugOverlay::QuadOverdrawDraw ? 4U : 1U,
           DXGI_FORMAT_R32_UINT,
           {1, 0},
           D3D11_USAGE_DEFAULT,
@@ -1133,7 +1133,7 @@ ResourceId D3D11Replay::RenderOverlay(ResourceId texid, FloatVector clearCol, De
 
         m_pImmediateContext->PSSetShader(m_Overlay.QuadOverdrawPS, NULL, 0);
 
-        if(overlay == DebugOverlay::QuadOverdrawPass && depthOverrideTex)
+        if((overlay == DebugOverlay::QuadOverdrawPass || overlay == DebugOverlay::PixelOverdrawPass) && depthOverrideTex)
           m_pDevice->GetDebugManager()->CopyTex2DMSToArray(
               UNWRAP(WrappedID3D11Texture2D1, depthOverrideTex),
               UNWRAP(WrappedID3D11Texture2D1, origDepthTex));
@@ -1142,7 +1142,7 @@ ResourceId D3D11Replay::RenderOverlay(ResourceId texid, FloatVector clearCol, De
 
         oldstate.ApplyState(m_pImmediateContext);
 
-        if(overlay == DebugOverlay::QuadOverdrawPass)
+        if(overlay == DebugOverlay::QuadOverdrawPass || overlay == DebugOverlay::PixelOverdrawPass)
         {
           m_pDevice->ReplayLog(events[i], events[i], eReplay_OnlyDraw);
 
@@ -1185,142 +1185,8 @@ ResourceId D3D11Replay::RenderOverlay(ResourceId texid, FloatVector clearCol, De
       SAFE_RELEASE(overdrawSRV);
       SAFE_RELEASE(overdrawUAV);
 
-      if(overlay == DebugOverlay::QuadOverdrawPass)
+      if(overlay == DebugOverlay::QuadOverdrawPass || overlay == DebugOverlay::PixelOverdrawPass)
         m_pDevice->ReplayLog(0, eventId, eReplay_WithoutDraw);
-    }
-  }
-  else if(overlay == DebugOverlay::PixelOverdrawPass)
-  {
-    SCOPED_TIMER("Pixel Overdraw");
-
-    rdcarray<uint32_t> events = passEvents;
-    events.push_back(eventId);
-
-    if(!events.empty())
-    {
-      m_pDevice->ReplayLog(0, events[0], eReplay_WithoutDraw);
-
-      D3D11RenderState *state = m_pImmediateContext->GetCurrentPipelineState();
-
-      // Use the actual render target dimensions instead of hardcoded values
-      uint32_t width = realTexDesc.Width;
-      uint32_t height = realTexDesc.Height;
-
-      D3D11_TEXTURE2D_DESC overdrawTexDesc = {
-          width,
-          height,
-          1U,
-          1U,
-          DXGI_FORMAT_R32_UINT,
-          {1, 0},
-          D3D11_USAGE_DEFAULT,
-          D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE,
-          0,
-          0,
-      };
-
-      ID3D11Texture2D *overdrawTex = NULL;
-      ID3D11ShaderResourceView *overdrawSRV = NULL;
-      ID3D11UnorderedAccessView *overdrawUAV = NULL;
-
-      m_pDevice->CreateTexture2D(&overdrawTexDesc, NULL, &overdrawTex);
-      m_pDevice->CreateShaderResourceView(overdrawTex, NULL, &overdrawSRV);
-      m_pDevice->CreateUnorderedAccessView(overdrawTex, NULL, &overdrawUAV);
-
-      UINT vals[4] = {};
-      m_pImmediateContext->ClearUnorderedAccessViewUint(overdrawUAV, vals);
-
-      for(size_t i = 0; i < events.size(); i++)
-      {
-        D3D11RenderState oldstate = *m_pImmediateContext->GetCurrentPipelineState();
-
-        // Setup depth state to read but not write depth
-        {
-          D3D11_DEPTH_STENCIL_DESC dsdesc = {
-              /*DepthEnable =*/TRUE,
-              /*DepthWriteMask =*/D3D11_DEPTH_WRITE_MASK_ZERO,
-              /*DepthFunc =*/D3D11_COMPARISON_LESS,
-              /*StencilEnable =*/FALSE,
-              /*StencilReadMask =*/D3D11_DEFAULT_STENCIL_READ_MASK,
-              /*StencilWriteMask =*/0,
-              /*FrontFace =*/{D3D11_STENCIL_OP_KEEP, D3D11_STENCIL_OP_KEEP, D3D11_STENCIL_OP_KEEP, D3D11_COMPARISON_ALWAYS},
-              /*BackFace =*/{D3D11_STENCIL_OP_KEEP, D3D11_STENCIL_OP_KEEP, D3D11_STENCIL_OP_KEEP, D3D11_COMPARISON_ALWAYS},
-          };
-          ID3D11DepthStencilState *ds = NULL;
-
-          if(state->OM.DepthStencilState)
-            state->OM.DepthStencilState->GetDesc(&dsdesc);
-
-          dsdesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-          dsdesc.StencilWriteMask = 0;
-
-          m_pDevice->CreateDepthStencilState(&dsdesc, &ds);
-          m_pImmediateContext->OMSetDepthStencilState(ds, oldstate.OM.StencRef);
-          SAFE_RELEASE(ds);
-        }
-
-        // Setup rasterizer state 
-        {
-          D3D11_RASTERIZER_DESC rdesc;
-          ID3D11RasterizerState *rs = NULL;
-
-          if(state->RS.State)
-            state->RS.State->GetDesc(&rdesc);
-          else
-            D3D11_DEFAULT_RASTERIZER_DESC(rdesc);
-
-          m_pDevice->CreateRasterizerState(&rdesc, &rs);
-          m_pImmediateContext->RSSetState(rs);
-          SAFE_RELEASE(rs);
-        }
-
-        UINT UAVcount = 1;
-        m_pImmediateContext->OMSetRenderTargetsAndUnorderedAccessViews(
-            0, NULL, oldstate.OM.DepthView, 0, 1, &overdrawUAV, &UAVcount);
-
-        m_pImmediateContext->PSSetShader(m_Overlay.PixelOverdrawPS, NULL, 0);
-
-        m_pDevice->ReplayLog(events[i], events[i], eReplay_OnlyDraw);
-
-        oldstate.ApplyState(m_pImmediateContext);
-
-        if(i + 1 < events.size())
-          m_pDevice->ReplayLog(events[i], events[i + 1], eReplay_WithoutDraw);
-      }
-
-      // Resolve pass - render the overdraw texture to the render target
-      {
-        m_pImmediateContext->VSSetShader(m_Overlay.FullscreenVS, NULL, 0);
-        m_pImmediateContext->HSSetShader(NULL, NULL, 0);
-        m_pImmediateContext->DSSetShader(NULL, NULL, 0);
-        m_pImmediateContext->GSSetShader(NULL, NULL, 0);
-        m_pImmediateContext->PSSetShader(m_Overlay.POResolvePS, NULL, 0);
-        m_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-        m_pImmediateContext->IASetInputLayout(NULL);
-
-        m_pImmediateContext->OMSetRenderTargets(1, &rtv, NULL);
-
-        m_pImmediateContext->OMSetDepthStencilState(NULL, 0);
-        m_pImmediateContext->OMSetBlendState(NULL, NULL, 0xffffffff);
-        m_pImmediateContext->RSSetState(m_General.RasterState);
-
-        D3D11_VIEWPORT view = {0.0f, 0.0f, (float)realTexDesc.Width, (float)realTexDesc.Height,
-                               0.0f, 1.0f};
-        m_pImmediateContext->RSSetViewports(1, &view);
-
-        float clearColour[] = {0.0f, 0.0f, 0.0f, 0.0f};
-        m_pImmediateContext->ClearRenderTargetView(rtv, clearColour);
-
-        m_pImmediateContext->PSSetShaderResources(0, 1, &overdrawSRV);
-
-        m_pImmediateContext->Draw(3, 0);
-      }
-
-      SAFE_RELEASE(overdrawTex);
-      SAFE_RELEASE(overdrawSRV);
-      SAFE_RELEASE(overdrawUAV);
-
-      m_pDevice->ReplayLog(0, eventId, eReplay_WithoutDraw);
     }
   }
   else if(renderDepth)

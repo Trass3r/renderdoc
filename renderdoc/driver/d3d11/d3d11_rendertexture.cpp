@@ -458,7 +458,8 @@ bool D3D11Replay::RenderTextureInternal(TextureDisplay cfg, TexDisplayFlags flag
   bool blendAlpha = (flags & eTexDisplay_BlendAlpha) != 0;
 
   {
-    if(cfg.overlay == DebugOverlay::QuadOverdrawDraw || cfg.overlay == DebugOverlay::QuadOverdrawPass)
+    if(cfg.overlay == DebugOverlay::QuadOverdrawDraw || cfg.overlay == DebugOverlay::QuadOverdrawPass ||
+       cfg.overlay == DebugOverlay::PixelOverdrawPass)
     {
       heatmapData.HeatmapMode = HEATMAP_LINEAR;
     }
