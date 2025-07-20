@@ -2021,9 +2021,9 @@ ResourceId GLReplay::RenderOverlay(ResourceId texid, FloatVector clearCol, Debug
   }
   else if(overlay == DebugOverlay::QuadOverdrawDraw || overlay == DebugOverlay::QuadOverdrawPass || overlay == DebugOverlay::PixelOverdrawPass)
   {
-    if(DebugData.quadoverdrawFragShader)
+    if(DebugData.quadoverdrawFragShader || overlay == DebugOverlay::PixelOverdrawPass && DebugData.pixeloverdrawFragShader)
     {
-      SCOPED_TIMER("Quad Overdraw");
+      SCOPED_TIMER("Overdraw");
 
       if(HasExt[ARB_viewport_array])
         drv.glDisablei(eGL_SCISSOR_TEST, 0);
@@ -2231,9 +2231,14 @@ ResourceId GLReplay::RenderOverlay(ResourceId texid, FloatVector clearCol, Debug
           // replace fragment shader. This is exactly what we did
           // at the start of this function for the single-event case, but now we have
           // to do it for every event
-          spirvOverlay = CreateFragmentShaderReplacementProgram(
-              prog, DebugData.overlayProg, pipe, DebugData.quadoverdrawFragShader,
-              DebugData.quadoverdrawFragShaderSPIRV);
+          if(overlay == DebugOverlay::PixelOverdrawPass)
+            spirvOverlay = CreateFragmentShaderReplacementProgram(
+                prog, DebugData.overlayProg, pipe, DebugData.pixeloverdrawFragShader,
+                DebugData.pixeloverdrawFragShaderSPIRV);
+          else
+            spirvOverlay = CreateFragmentShaderReplacementProgram(
+                prog, DebugData.overlayProg, pipe, DebugData.quadoverdrawFragShader,
+                DebugData.quadoverdrawFragShaderSPIRV);
           drv.glUseProgram(DebugData.overlayProg);
           drv.glBindProgramPipeline(0);
 

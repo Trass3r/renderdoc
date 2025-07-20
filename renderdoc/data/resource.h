@@ -29,6 +29,7 @@
 #define RESOURCE_fixedcol_2_dxbc    115
 #define RESOURCE_fixedcol_3_dxbc    116
 #define RESOURCE_quadwrite_dxbc     117
+#define RESOURCE_pixelwrite_dxbc    133
 #define RESOURCE_pixelhistory_primitiveid_dxbc 122
 #define RESOURCE_pixelhistory_fixedcol_0_dxbc  123
 #define RESOURCE_pixelhistory_fixedcol_1_dxbc  124
