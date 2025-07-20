@@ -94,7 +94,8 @@
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <TreatWarningAsError>false</TreatWarningAsError>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalOptions>/wd4100 /wd4512</AdditionalOptions>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <AdditionalOptions>/Gw /wd4100 /wd4512</AdditionalOptions>
       <AdditionalIncludeDirectories>$(ProjectDir)..\..\;$(PythonIncludeDir);$(SolutionDir)\renderdoc\api\replay</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
