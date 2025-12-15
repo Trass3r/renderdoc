@@ -767,6 +767,7 @@ void TextureViewer::RT_FetchCurrentPixel(IReplayController *r, uint32_t x, uint3
 
   if(m_TexDisplay.overlay == DebugOverlay::QuadOverdrawDraw ||
      m_TexDisplay.overlay == DebugOverlay::QuadOverdrawPass ||
+     m_TexDisplay.overlay == DebugOverlay::PixelOverdrawPass ||
      m_TexDisplay.overlay == DebugOverlay::TriangleSizeDraw ||
      m_TexDisplay.overlay == DebugOverlay::TriangleSizePass)
   {
@@ -958,6 +959,7 @@ void TextureViewer::UI_UpdateStatusText()
 
   if(m_TexDisplay.overlay == DebugOverlay::QuadOverdrawPass ||
      m_TexDisplay.overlay == DebugOverlay::QuadOverdrawDraw ||
+     m_TexDisplay.overlay == DebugOverlay::PixelOverdrawPass ||
      m_TexDisplay.overlay == DebugOverlay::TriangleSizePass ||
      m_TexDisplay.overlay == DebugOverlay::TriangleSizeDraw)
   {
@@ -3137,15 +3139,19 @@ void TextureViewer::OnEventChanged(uint32_t eventId)
     font.setItalic(true);
     ui->overlay->setItemText((int)DebugOverlay::QuadOverdrawDraw, tr("Overdraw (N/A on MSAA)"));
     ui->overlay->setItemText((int)DebugOverlay::QuadOverdrawPass, tr("Overdraw (N/A on MSAA)"));
+    ui->overlay->setItemText((int)DebugOverlay::PixelOverdrawPass, tr("Pixel Overdraw (N/A on MSAA)"));
     ui->overlay->setItemData((int)DebugOverlay::QuadOverdrawDraw, font, Qt::FontRole);
     ui->overlay->setItemData((int)DebugOverlay::QuadOverdrawPass, font, Qt::FontRole);
+    ui->overlay->setItemData((int)DebugOverlay::PixelOverdrawPass, font, Qt::FontRole);
   }
   else
   {
     ui->overlay->setItemText((int)DebugOverlay::QuadOverdrawDraw, tr("Quad Overdraw (Draw)"));
     ui->overlay->setItemText((int)DebugOverlay::QuadOverdrawPass, tr("Quad Overdraw (Pass)"));
+    ui->overlay->setItemText((int)DebugOverlay::PixelOverdrawPass, tr("Pixel Overdraw (Pass)"));
     ui->overlay->setItemData((int)DebugOverlay::QuadOverdrawDraw, font, Qt::FontRole);
     ui->overlay->setItemData((int)DebugOverlay::QuadOverdrawPass, font, Qt::FontRole);
+    ui->overlay->setItemData((int)DebugOverlay::PixelOverdrawPass, font, Qt::FontRole);
   }
 
   int count = 7;
@@ -3549,6 +3555,7 @@ void TextureViewer::on_overlay_currentIndexChanged(int index)
     ANALYTICS_OVERLAY(ClearBeforeDraw);
     ANALYTICS_OVERLAY(QuadOverdrawPass);
     ANALYTICS_OVERLAY(QuadOverdrawDraw);
+    ANALYTICS_OVERLAY(PixelOverdrawPass);
     ANALYTICS_OVERLAY(TriangleSizePass);
     ANALYTICS_OVERLAY(TriangleSizeDraw);
     default: break;
@@ -4072,6 +4079,7 @@ void TextureViewer::on_saveTex_clicked()
 
     if(m_TexDisplay.overlay == DebugOverlay::QuadOverdrawDraw ||
        m_TexDisplay.overlay == DebugOverlay::QuadOverdrawPass ||
+       m_TexDisplay.overlay == DebugOverlay::PixelOverdrawPass ||
        m_TexDisplay.overlay == DebugOverlay::TriangleSizeDraw ||
        m_TexDisplay.overlay == DebugOverlay::TriangleSizePass)
     {

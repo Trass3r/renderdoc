@@ -228,6 +228,7 @@ struct Analytics
     bool ClearBeforeDraw = false;
     bool QuadOverdrawPass = false;
     bool QuadOverdrawDraw = false;
+    bool PixelOverdrawPass = false;
     bool TriangleSizePass = false;
     bool TriangleSizeDraw = false;
   } TextureOverlays;

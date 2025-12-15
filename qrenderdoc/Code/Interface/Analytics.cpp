@@ -302,6 +302,7 @@ static struct AnalyticsDocumentation
     DOCUMENT_ANALYTIC(ClearBeforeDraw, "Did the user use the Clear Before Draw overlay?");
     DOCUMENT_ANALYTIC(QuadOverdrawPass, "Did the user use the Quad Overdraw (Pass) overlay?");
     DOCUMENT_ANALYTIC(QuadOverdrawDraw, "Did the user use the Quad Overdraw (Draw) overlay?");
+    DOCUMENT_ANALYTIC(PixelOverdrawPass, "Did the user use the Pixel Overdraw (Pass) overlay?");
     DOCUMENT_ANALYTIC(TriangleSizePass, "Did the user use the Triangle Size (Pass) overlay?");
     DOCUMENT_ANALYTIC(TriangleSizeDraw, "Did the user use the Triangle Size (Draw) overlay?");
   } DOCUMENT_ANALYTIC_SECTION(TextureOverlays, "Texture Overlays");
@@ -324,7 +325,7 @@ void AnalyticsSerialise(Analytics &serdb, QVariantMap &values, AnalyticsSerialis
 
 // only check this on 64-bit as it is different on 32-bit
 #if QT_POINTER_SIZE == 8 && defined(Q_OS_WIN32)
-  static_assert(sizeof(Analytics) == 149, "Sizeof Analytics has changed - update serialisation.");
+  static_assert(sizeof(Analytics) == 150, "Sizeof Analytics has changed - update serialisation.");
 #endif
 
   QString doc;
@@ -421,6 +422,7 @@ void AnalyticsSerialise(Analytics &serdb, QVariantMap &values, AnalyticsSerialis
     ANALYTIC_SERIALISE(TextureOverlays.ClearBeforeDraw);
     ANALYTIC_SERIALISE(TextureOverlays.QuadOverdrawPass);
     ANALYTIC_SERIALISE(TextureOverlays.QuadOverdrawDraw);
+    ANALYTIC_SERIALISE(TextureOverlays.PixelOverdrawPass);
     ANALYTIC_SERIALISE(TextureOverlays.TriangleSizePass);
     ANALYTIC_SERIALISE(TextureOverlays.TriangleSizeDraw);
   }

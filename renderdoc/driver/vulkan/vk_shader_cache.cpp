@@ -103,6 +103,15 @@ static const BuiltinShaderConfig builtinShaders[] = {
         rdcspv::ShaderStage::Fragment,
         FeatureCheck::FragmentStores | FeatureCheck::NonMetalBackend | FeatureCheck::MultiView,
         BuiltinShaderFlags::Multiview),
+/*
+    BuiltinShaderConfig(BuiltinShader::PixelWriteFS, EmbeddedResource(glsl_pixelwrite_frag),
+                        rdcspv::ShaderStage::Fragment),
+    BuiltinShaderConfig(
+        BuiltinShader::PixelWriteMultiviewFS, EmbeddedResource(glsl_pixelwrite_frag),
+        rdcspv::ShaderStage::Fragment,
+        FeatureCheck::FragmentStores | FeatureCheck::NonMetalBackend | FeatureCheck::MultiView,
+        BuiltinShaderFlags::Multiview),
+*/
     BuiltinShaderConfig(BuiltinShader::TrisizeGS, EmbeddedResource(glsl_trisize_geom),
                         rdcspv::ShaderStage::Geometry),
     BuiltinShaderConfig(BuiltinShader::TrisizeFS, EmbeddedResource(glsl_trisize_frag),

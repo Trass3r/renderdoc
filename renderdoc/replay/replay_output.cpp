@@ -696,6 +696,7 @@ void ReplayOutput::DisplayContext()
 
   if((m_RenderData.texDisplay.overlay == DebugOverlay::QuadOverdrawDraw ||
       m_RenderData.texDisplay.overlay == DebugOverlay::QuadOverdrawPass ||
+      m_RenderData.texDisplay.overlay == DebugOverlay::PixelOverdrawPass ||
       m_RenderData.texDisplay.overlay == DebugOverlay::TriangleSizeDraw ||
       m_RenderData.texDisplay.overlay == DebugOverlay::TriangleSizePass) &&
      m_OverlayResourceId != ResourceId())
