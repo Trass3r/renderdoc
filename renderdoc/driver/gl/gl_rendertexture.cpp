@@ -674,7 +674,8 @@ bool GLReplay::RenderTextureInternal(TextureDisplay cfg, TexDisplayFlags flags)
   HeatmapData heatmapData = {};
 
   {
-    if(cfg.overlay == DebugOverlay::QuadOverdrawDraw || cfg.overlay == DebugOverlay::QuadOverdrawPass)
+    if(cfg.overlay == DebugOverlay::QuadOverdrawDraw || cfg.overlay == DebugOverlay::QuadOverdrawPass ||
+       cfg.overlay == DebugOverlay::PixelOverdrawPass)
     {
       heatmapData.HeatmapMode = HEATMAP_LINEAR;
     }

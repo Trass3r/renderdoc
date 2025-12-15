@@ -57,6 +57,7 @@ DECLARE_EMBED(glsl_gl_texsample_h);
 DECLARE_EMBED(glsl_vk_texsample_h);
 DECLARE_EMBED(glsl_quadresolve_frag);
 DECLARE_EMBED(glsl_quadwrite_frag);
+DECLARE_EMBED(glsl_pixelwrite_frag);
 DECLARE_EMBED(glsl_mesh_comp);
 DECLARE_EMBED(glsl_array2ms_comp);
 DECLARE_EMBED(glsl_ms2array_comp);

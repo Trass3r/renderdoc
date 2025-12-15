@@ -408,8 +408,10 @@ ResourceId GLReplay::RenderOverlay(ResourceId texid, FloatVector clearCol, Debug
     drv.glDeleteShader(DebugData.fixedcolFragShader);
   if(DebugData.quadoverdrawFragShader)
     drv.glDeleteShader(DebugData.quadoverdrawFragShader);
+  if(DebugData.pixeloverdrawFragShader)
+    drv.glDeleteShader(DebugData.pixeloverdrawFragShader);
 
-  DebugData.fixedcolFragShader = DebugData.quadoverdrawFragShader = 0;
+  DebugData.fixedcolFragShader = DebugData.quadoverdrawFragShader = DebugData.pixeloverdrawFragShader = 0;
 
   ShaderType shaderType;
   int glslVer;
@@ -484,11 +486,28 @@ ResourceId GLReplay::RenderOverlay(ResourceId texid, FloatVector clearCol, Debug
         RDCASSERT(DebugData.quadoverdrawFragShaderSPIRV);
       }
     }
+
+    // Pixel overdraw shader is simpler and doesn't need derivative control
+    DebugData.pixeloverdrawFragShader = 0;
+
+    if(HasExt[ARB_shader_image_load_store])
+    {
+      rdcstr source =
+          GenerateGLSLShader(GetEmbeddedResource(glsl_pixelwrite_frag), shaderType, glslVer);
+      DebugData.pixeloverdrawFragShader = CreateShader(eGL_FRAGMENT_SHADER, source);
+
+      if(HasExt[ARB_gl_spirv])
+      {
+        RDCASSERT(DebugData.pixeloverdrawFragShaderSPIRV);
+      }
+    }
   }
   else
   {
     if(overlay == DebugOverlay::QuadOverdrawDraw || overlay == DebugOverlay::QuadOverdrawPass)
       RDCWARN("Quad overdraw not supported on GLES", glslVer);
+    if(overlay == DebugOverlay::PixelOverdrawPass)
+      RDCWARN("Pixel overdraw not supported on GLES", glslVer);
   }
 
   GLuint prog = 0, pipe = 0;
@@ -2015,11 +2034,11 @@ ResourceId GLReplay::RenderOverlay(ResourceId texid, FloatVector clearCol, Debug
         ReplayLog(eventId, eReplay_WithoutDraw);
     }
   }
-  else if(overlay == DebugOverlay::QuadOverdrawDraw || overlay == DebugOverlay::QuadOverdrawPass)
+  else if(overlay == DebugOverlay::QuadOverdrawDraw || overlay == DebugOverlay::QuadOverdrawPass || overlay == DebugOverlay::PixelOverdrawPass)
   {
-    if(DebugData.quadoverdrawFragShader)
+    if(DebugData.quadoverdrawFragShader || overlay == DebugOverlay::PixelOverdrawPass && DebugData.pixeloverdrawFragShader)
     {
-      SCOPED_TIMER("Quad Overdraw");
+      SCOPED_TIMER("Overdraw");
 
       if(HasExt[ARB_viewport_array])
         drv.glDisablei(eGL_SCISSOR_TEST, 0);
@@ -2048,9 +2067,14 @@ ResourceId GLReplay::RenderOverlay(ResourceId texid, FloatVector clearCol, Debug
 
         // image for quad usage
         drv.glBindTexture(eGL_TEXTURE_2D_ARRAY, quadtexs[1]);
-        drv.glTextureImage3DEXT(quadtexs[1], eGL_TEXTURE_2D_ARRAY, 0, eGL_R32UI,
-                                RDCMAX(1, outWidth >> 1), RDCMAX(1, outHeight >> 1), 4, 0,
-                                eGL_RED_INTEGER, eGL_UNSIGNED_INT, NULL);
+        if (overlay == DebugOverlay::QuadOverdrawPass || overlay == DebugOverlay::QuadOverdrawDraw)
+          drv.glTextureImage3DEXT(quadtexs[1], eGL_TEXTURE_2D_ARRAY, 0, eGL_R32UI,
+                                  RDCMAX(1, outWidth >> 1), RDCMAX(1, outHeight >> 1), 4, 0,
+                                  eGL_RED_INTEGER, eGL_UNSIGNED_INT, NULL);
+        else
+          drv.glTextureImage2DEXT(quadtexs[1], eGL_TEXTURE_2D, 0, eGL_R32UI,
+                                  RDCMAX(1, outWidth >> 1), RDCMAX(1, outHeight >> 1), 0,
+                                  eGL_RED_INTEGER, eGL_UNSIGNED_INT, NULL);
         drv.glTextureParameteriEXT(quadtexs[1], eGL_TEXTURE_2D_ARRAY, eGL_TEXTURE_MAX_LEVEL, 0);
 
         // temporarily attach to FBO to clear it
@@ -2081,7 +2105,7 @@ ResourceId GLReplay::RenderOverlay(ResourceId texid, FloatVector clearCol, Debug
 
         GLuint curDepth = 0, depthType = 0;
 
-        if(overlay == DebugOverlay::QuadOverdrawPass)
+        if(overlay == DebugOverlay::QuadOverdrawPass || overlay == DebugOverlay::PixelOverdrawPass)
           ReplayLog(events[0], eReplay_WithoutDraw);
         else
           rs.ApplyState(m_pDriver);
@@ -2222,9 +2246,14 @@ ResourceId GLReplay::RenderOverlay(ResourceId texid, FloatVector clearCol, Debug
           // replace fragment shader. This is exactly what we did
           // at the start of this function for the single-event case, but now we have
           // to do it for every event
-          spirvOverlay = CreateShaderReplacementProgram(
-              prog, pipe, DebugData.overlayProg, ShaderStage::Pixel,
-              DebugData.quadoverdrawFragShader, DebugData.quadoverdrawFragShaderSPIRV);
+          if(overlay == DebugOverlay::PixelOverdrawPass)
+            spirvOverlay = CreateShaderReplacementProgram(
+                prog, pipe, DebugData.overlayProg, ShaderStage::Pixel,
+                DebugData.pixeloverdrawFragShader, DebugData.pixeloverdrawFragShaderSPIRV);
+          else
+            spirvOverlay = CreateShaderReplacementProgram(
+                prog, pipe, DebugData.overlayProg, ShaderStage::Pixel,
+                DebugData.quadoverdrawFragShader, DebugData.quadoverdrawFragShaderSPIRV);
           drv.glUseProgram(DebugData.overlayProg);
           drv.glBindProgramPipeline(0);
 
@@ -2237,7 +2266,7 @@ ResourceId GLReplay::RenderOverlay(ResourceId texid, FloatVector clearCol, Debug
               RDCERR("Couldn't get location of overdrawImage");
           }
 
-          if(overlay == DebugOverlay::QuadOverdrawPass && overridedepth)
+          if((overlay == DebugOverlay::QuadOverdrawPass || overlay == DebugOverlay::PixelOverdrawPass) && overridedepth)
             drv.CopyTex2DMSToArray(overridedepth, curDepth, outWidth, outHeight, depthSlices,
                                    depthSamples, fmt);
 
@@ -2263,7 +2292,7 @@ ResourceId GLReplay::RenderOverlay(ResourceId texid, FloatVector clearCol, Debug
             drv.glStencilMaskSeparate(eGL_BACK, (GLuint)stencilbmask);
           }
 
-          if(overlay == DebugOverlay::QuadOverdrawPass)
+          if(overlay == DebugOverlay::QuadOverdrawPass || overlay == DebugOverlay::PixelOverdrawPass)
           {
             m_pDriver->ReplayLog(0, events[i], eReplay_OnlyDraw);
 
@@ -2320,7 +2349,7 @@ ResourceId GLReplay::RenderOverlay(ResourceId texid, FloatVector clearCol, Debug
         drv.glDeleteTextures(2, quadtexs);
         drv.glDeleteTextures(1, &overridedepth);
 
-        if(overlay == DebugOverlay::QuadOverdrawPass)
+        if(overlay == DebugOverlay::QuadOverdrawPass || overlay == DebugOverlay::PixelOverdrawPass)
           ReplayLog(eventId, eReplay_WithoutDraw);
       }
     }

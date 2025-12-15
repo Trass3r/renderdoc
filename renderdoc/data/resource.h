@@ -59,6 +59,7 @@
 #define RESOURCE_glsl_vk_texsample_h                 418
 #define RESOURCE_glsl_quadresolve_frag               419
 #define RESOURCE_glsl_quadwrite_frag                 420
+#define RESOURCE_glsl_pixelwrite_frag                460
 #define RESOURCE_glsl_mesh_comp                      421
 #define RESOURCE_glsl_array2ms_comp                  422
 #define RESOURCE_glsl_ms2array_comp                  423

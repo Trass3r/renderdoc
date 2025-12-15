@@ -455,7 +455,7 @@ void GLReplay::InitDebugData()
   fs = GenerateGLSLShader(GetEmbeddedResource(glsl_depth_copyms_frag), shaderType, glslBaseVer);
   DebugData.fullScreenCopyDepthMS = CreateShaderProgram(vs, fs);
 
-  DebugData.fixedcolFragShaderSPIRV = DebugData.quadoverdrawFragShaderSPIRV = 0;
+  DebugData.fixedcolFragShaderSPIRV = DebugData.quadoverdrawFragShaderSPIRV = DebugData.pixeloverdrawFragShaderSPIRV = 0;
 
   // pre-compile SPIR-V shaders up front since this is more expensive
   if(HasExt[ARB_gl_spirv])
@@ -478,6 +478,11 @@ void GLReplay::InitDebugData()
       source = GenerateGLSLShader(GetEmbeddedResource(glsl_quadwrite_frag), ShaderType::GLSPIRV,
                                   430, defines);
       DebugData.quadoverdrawFragShaderSPIRV = CreateSPIRVShader(eGL_FRAGMENT_SHADER, source);
+
+      // Pixel overdraw shader doesn't need derivative control since it's simpler
+      source = GenerateGLSLShader(GetEmbeddedResource(glsl_pixelwrite_frag), ShaderType::GLSPIRV,
+                                  430);
+      DebugData.pixeloverdrawFragShaderSPIRV = CreateSPIRVShader(eGL_FRAGMENT_SHADER, source);
     }
   }
 
@@ -530,8 +535,8 @@ void GLReplay::InitDebugData()
 
   vs = GenerateGLSLShader(GetEmbeddedResource(glsl_blit_vert), shaderType, glslBaseVer);
 
-  DebugData.fixedcolFragShader = DebugData.quadoverdrawFragShader = 0;
-  DebugData.quadoverdrawResolveProg = 0;
+  DebugData.fixedcolFragShader = DebugData.quadoverdrawFragShader = DebugData.pixeloverdrawFragShader = 0;
+  DebugData.quadoverdrawResolveProg = DebugData.pixeloverdrawResolveProg = 0;
 
   if(IsGLES)
   {
@@ -553,6 +558,13 @@ void GLReplay::InitDebugData()
     GL.glUseProgram(DebugData.quadoverdrawResolveProg);
 
     GL.glUniform1i(GL.glGetUniformLocation(DebugData.quadoverdrawResolveProg, "overdrawImage"), 0);
+
+    // Create pixel overdraw resolve program (can reuse the same quadresolve shader)
+    DebugData.pixeloverdrawResolveProg = CreateShaderProgram(vs, fs);
+
+    GL.glUseProgram(DebugData.pixeloverdrawResolveProg);
+
+    GL.glUniform1i(GL.glGetUniformLocation(DebugData.pixeloverdrawResolveProg, "overdrawImage"), 0);
   }
   else
   {
@@ -1251,6 +1263,13 @@ void GLReplay::DeleteDebugData()
     drv.glDeleteShader(DebugData.quadoverdrawFragShaderSPIRV);
   if(DebugData.quadoverdrawResolveProg)
     drv.glDeleteProgram(DebugData.quadoverdrawResolveProg);
+
+  if(DebugData.pixeloverdrawFragShader)
+    drv.glDeleteShader(DebugData.pixeloverdrawFragShader);
+  if(DebugData.pixeloverdrawFragShaderSPIRV)
+    drv.glDeleteShader(DebugData.pixeloverdrawFragShaderSPIRV);
+  if(DebugData.pixeloverdrawResolveProg)
+    drv.glDeleteProgram(DebugData.pixeloverdrawResolveProg);
 
   if(DebugData.texDisplayVertexShader)
     drv.glDeleteShader(DebugData.texDisplayVertexShader);
