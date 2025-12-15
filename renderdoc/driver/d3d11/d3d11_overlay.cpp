@@ -930,7 +930,7 @@ ResourceId D3D11Replay::RenderOverlay(ResourceId texid, FloatVector clearCol, De
     if(overlay == DebugOverlay::TriangleSizePass)
       m_pDevice->ReplayLog(0, eventId, eReplay_WithoutDraw);
   }
-  else if(overlay == DebugOverlay::QuadOverdrawPass || overlay == DebugOverlay::QuadOverdrawDraw)
+  else if(overlay == DebugOverlay::QuadOverdrawPass || overlay == DebugOverlay::QuadOverdrawDraw || overlay == DebugOverlay::PixelOverdrawPass)
   {
     SCOPED_TIMER("Quad Overdraw");
 
@@ -943,7 +943,7 @@ ResourceId D3D11Replay::RenderOverlay(ResourceId texid, FloatVector clearCol, De
 
     if(!events.empty())
     {
-      if(overlay == DebugOverlay::QuadOverdrawPass)
+      if(overlay == DebugOverlay::QuadOverdrawPass || overlay == DebugOverlay::PixelOverdrawPass)
         m_pDevice->ReplayLog(0, events[0], eReplay_WithoutDraw);
 
       D3D11RenderState *state = m_pImmediateContext->GetCurrentPipelineState();
@@ -1032,7 +1032,7 @@ ResourceId D3D11Replay::RenderOverlay(ResourceId texid, FloatVector clearCol, De
         viewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
         viewDesc.Texture2DArray.ArraySize = 1;
 
-        if(overlay != DebugOverlay::QuadOverdrawPass)
+        if(overlay != DebugOverlay::QuadOverdrawPass && overlay != DebugOverlay::PixelOverdrawPass)
           m_pDevice->GetDebugManager()->CopyTex2DMSToArray(
               UNWRAP(WrappedID3D11Texture2D1, depthOverrideTex),
               UNWRAP(WrappedID3D11Texture2D1, origDepthTex));
@@ -1045,7 +1045,7 @@ ResourceId D3D11Replay::RenderOverlay(ResourceId texid, FloatVector clearCol, De
           width,
           height,
           1U,
-          4U,
+          overlay == DebugOverlay::QuadOverdrawPass || overlay == DebugOverlay::QuadOverdrawDraw ? 4U : 1U,
           DXGI_FORMAT_R32_UINT,
           {1, 0},
           D3D11_USAGE_DEFAULT,
@@ -1133,7 +1133,7 @@ ResourceId D3D11Replay::RenderOverlay(ResourceId texid, FloatVector clearCol, De
 
         m_pImmediateContext->PSSetShader(m_Overlay.QuadOverdrawPS, NULL, 0);
 
-        if(overlay == DebugOverlay::QuadOverdrawPass && depthOverrideTex)
+        if((overlay == DebugOverlay::QuadOverdrawPass || overlay == DebugOverlay::PixelOverdrawPass) && depthOverrideTex)
           m_pDevice->GetDebugManager()->CopyTex2DMSToArray(
               UNWRAP(WrappedID3D11Texture2D1, depthOverrideTex),
               UNWRAP(WrappedID3D11Texture2D1, origDepthTex));
@@ -1142,7 +1142,7 @@ ResourceId D3D11Replay::RenderOverlay(ResourceId texid, FloatVector clearCol, De
 
         oldstate.ApplyState(m_pImmediateContext);
 
-        if(overlay == DebugOverlay::QuadOverdrawPass)
+        if(overlay == DebugOverlay::QuadOverdrawPass || overlay == DebugOverlay::PixelOverdrawPass)
         {
           m_pDevice->ReplayLog(events[i], events[i], eReplay_OnlyDraw);
 
@@ -1185,7 +1185,7 @@ ResourceId D3D11Replay::RenderOverlay(ResourceId texid, FloatVector clearCol, De
       SAFE_RELEASE(overdrawSRV);
       SAFE_RELEASE(overdrawUAV);
 
-      if(overlay == DebugOverlay::QuadOverdrawPass)
+      if(overlay == DebugOverlay::QuadOverdrawPass || overlay == DebugOverlay::PixelOverdrawPass)
         m_pDevice->ReplayLog(0, eventId, eReplay_WithoutDraw);
     }
   }

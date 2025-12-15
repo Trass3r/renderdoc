@@ -1530,6 +1530,14 @@ See :ref:`the documentation for this feature <render-overlay>`.
   This is the same as the :data:`QuadOverdrawPass` overlay, except it only shows the overdraw for
   the current drawcall, not the current pass.
 
+.. data:: PixelOverdrawPass
+
+  This overlay shows simple pixel-level overdraw counting without using quad granularity or 
+  derivatives. Each pixel that gets rendered to increments a counter, providing a metric 
+  suitable for draw order optimization.
+
+  The overlay accounts for all draws in the current pass.
+
 .. data:: TriangleSizePass
 
   This overlay shows the size of each triangle, starting from triangles with area ``16 (4x4)`` and above
@@ -1558,6 +1566,7 @@ enum class DebugOverlay : uint32_t
   ClearBeforeDraw,
   QuadOverdrawPass,
   QuadOverdrawDraw,
+  PixelOverdrawPass,
   TriangleSizePass,
   TriangleSizeDraw,
 };

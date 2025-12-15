@@ -506,6 +506,8 @@ private:
     ID3DBlob *TriangleSizePS = NULL;
     ID3DBlob *QuadOverdrawWritePS = NULL;
     ID3DBlob *QuadOverdrawWriteDXILPS = NULL;
+    ID3DBlob *PixelOverdrawWritePS = NULL;
+    ID3DBlob *PixelOverdrawWriteDXILPS = NULL;
     ID3D12RootSignature *QuadResolveRootSig = NULL;
     ID3D12PipelineState *QuadResolvePipe[8] = {NULL};
     ID3D12RootSignature *DepthCopyResolveRootSig = NULL;

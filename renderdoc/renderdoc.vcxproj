@@ -715,6 +715,7 @@
     <None Include="data\hlsl\pixelhistory.hlsl" />
     <None Include="data\hlsl\d3d12_pixelhistory.hlsl" />
     <None Include="data\hlsl\quadoverdraw.hlsl" />
+    <None Include="data\hlsl\pixeloverdraw.hlsl" />
     <None Include="data\hlsl\texdisplay.hlsl" />
     <None Include="os\win32\comexport.def" />
     <None Include="librenderdoc.so-gdb.py" />
@@ -810,7 +811,7 @@ namespace DXCEnumerateAndCheck {
       </ResourceCompile>
     </ItemGroup>
   </Target>
-  <Target Name="_bakeShaders" BeforeTargets="PrepareForBuild" Condition="$(DXCExecutable.Length) &gt; 0" Inputs="data\hlsl\fixedcol.hlsl;data\hlsl\quadoverdraw.hlsl;data\hlsl\d3d12_pixelhistory.hlsl" Outputs="$(DXILBakedDir)\fixedcol_0.dxbc;$(DXILBakedDir)\fixedcol_1.dxbc;$(DXILBakedDir)\fixedcol_2.dxbc;$(DXILBakedDir)\fixedcol_3.dxbc;$(DXILBakedDir)\quadwrite.dxbc;$(DXILBakedDir)\pixelhistory_primitiveid.dxbc;$(DXILBakedDir)\pixelhistory_fixedcol_0.dxbc;$(DXILBakedDir)\pixelhistory_fixedcol_1.dxbc;$(DXILBakedDir)\pixelhistory_fixedcol_2.dxbc;$(DXILBakedDir)\pixelhistory_fixedcol_3.dxbc;$(DXILBakedDir)\pixelhistory_fixedcol_4.dxbc;$(DXILBakedDir)\pixelhistory_fixedcol_5.dxbc;$(DXILBakedDir)\pixelhistory_fixedcol_6.dxbc;$(DXILBakedDir)\pixelhistory_fixedcol_7.dxbc">
+  <Target Name="_bakeShaders" BeforeTargets="PrepareForBuild" Condition="$(DXCExecutable.Length) &gt; 0" Inputs="data\hlsl\fixedcol.hlsl;data\hlsl\quadoverdraw.hlsl;data\hlsl\pixeloverdraw.hlsl;data\hlsl\d3d12_pixelhistory.hlsl" Outputs="$(DXILBakedDir)\fixedcol_0.dxbc;$(DXILBakedDir)\fixedcol_1.dxbc;$(DXILBakedDir)\fixedcol_2.dxbc;$(DXILBakedDir)\fixedcol_3.dxbc;$(DXILBakedDir)\quadwrite.dxbc;$(DXILBakedDir)\pixelhistory_primitiveid.dxbc;$(DXILBakedDir)\pixelhistory_fixedcol_0.dxbc;$(DXILBakedDir)\pixelhistory_fixedcol_1.dxbc;$(DXILBakedDir)\pixelhistory_fixedcol_2.dxbc;$(DXILBakedDir)\pixelhistory_fixedcol_3.dxbc;$(DXILBakedDir)\pixelhistory_fixedcol_4.dxbc;$(DXILBakedDir)\pixelhistory_fixedcol_5.dxbc;$(DXILBakedDir)\pixelhistory_fixedcol_6.dxbc;$(DXILBakedDir)\pixelhistory_fixedcol_7.dxbc">
     <Message Text="Baking DXIL Shaders with $(DXCExecutable)" Importance="High" />
     <MakeDir Directories="$(DXILBakedDir)" />
     <Exec Command="&quot;$(DXCExecutable)&quot; &quot;$(ProjectDir)data\hlsl\fixedcol.hlsl&quot; -T ps_6_0 -DVARIANT=0 -E main -Qstrip_reflect -Fo &quot;$(DXILBakedDir)fixedcol_0.dxbc&quot;" />
@@ -818,6 +819,7 @@ namespace DXCEnumerateAndCheck {
     <Exec Command="&quot;$(DXCExecutable)&quot; &quot;$(ProjectDir)data\hlsl\fixedcol.hlsl&quot; -T ps_6_0 -DVARIANT=2 -E main -Qstrip_reflect -Fo &quot;$(DXILBakedDir)fixedcol_2.dxbc&quot;" />
     <Exec Command="&quot;$(DXCExecutable)&quot; &quot;$(ProjectDir)data\hlsl\fixedcol.hlsl&quot; -T ps_6_0 -DVARIANT=3 -E main -Qstrip_reflect -Fo &quot;$(DXILBakedDir)fixedcol_3.dxbc&quot;" />
     <Exec Command="&quot;$(DXCExecutable)&quot; &quot;$(ProjectDir)data\hlsl\quadoverdraw.hlsl&quot; -T ps_6_0 -DD3D12=1 -E RENDERDOC_QuadOverdrawPS -Qstrip_reflect -Fo &quot;$(DXILBakedDir)quadwrite.dxbc&quot;" />
+    <Exec Command="&quot;$(DXCExecutable)&quot; &quot;$(ProjectDir)data\hlsl\pixeloverdraw.hlsl&quot; -T ps_6_0 -DD3D12=1 -E RENDERDOC_PixelOverdrawPS -Qstrip_reflect -Fo &quot;$(DXILBakedDir)pixelwrite.dxbc&quot;" />
     <Exec Command="&quot;$(DXCExecutable)&quot; &quot;$(ProjectDir)data\hlsl\d3d12_pixelhistory.hlsl&quot; -T ps_6_0 -E RENDERDOC_PrimitiveIDPS -Qstrip_reflect -Fo &quot;$(DXILBakedDir)pixelhistory_primitiveid.dxbc&quot;" />
     <Exec Command="&quot;$(DXCExecutable)&quot; &quot;$(ProjectDir)data\hlsl\d3d12_pixelhistory.hlsl&quot; -T ps_6_0 -DRT=0 -E RENDERDOC_PixelHistoryFixedColPS -Qstrip_reflect -Fo &quot;$(DXILBakedDir)pixelhistory_fixedcol_0.dxbc&quot;" />
     <Exec Command="&quot;$(DXCExecutable)&quot; &quot;$(ProjectDir)data\hlsl\d3d12_pixelhistory.hlsl&quot; -T ps_6_0 -DRT=1 -E RENDERDOC_PixelHistoryFixedColPS -Qstrip_reflect -Fo &quot;$(DXILBakedDir)pixelhistory_fixedcol_1.dxbc&quot;" />

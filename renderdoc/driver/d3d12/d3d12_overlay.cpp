@@ -1841,7 +1841,7 @@ ResourceId D3D12Replay::RenderOverlay(ResourceId texid, FloatVector clearCol, De
     // restore back to normal
     m_pDevice->ReplayLog(0, eventId, eReplay_WithoutDraw);
   }
-  else if(overlay == DebugOverlay::QuadOverdrawPass || overlay == DebugOverlay::QuadOverdrawDraw)
+  else if(overlay == DebugOverlay::QuadOverdrawPass || overlay == DebugOverlay::QuadOverdrawDraw || overlay == DebugOverlay::PixelOverdrawPass)
   {
     SCOPED_TIMER("Quad Overdraw");
 
@@ -1854,7 +1854,7 @@ ResourceId D3D12Replay::RenderOverlay(ResourceId texid, FloatVector clearCol, De
 
     if(!events.empty())
     {
-      if(overlay == DebugOverlay::QuadOverdrawPass)
+      if(overlay == DebugOverlay::QuadOverdrawPass || overlay == DebugOverlay::PixelOverdrawPass)
       {
         list->Close();
         m_pDevice->ReplayLog(0, events[0], eReplay_WithoutDraw);
@@ -1871,7 +1871,7 @@ ResourceId D3D12Replay::RenderOverlay(ResourceId texid, FloatVector clearCol, De
 
       D3D12_RESOURCE_DESC uavTexDesc = {};
       uavTexDesc.Alignment = 0;
-      uavTexDesc.DepthOrArraySize = 4;
+      uavTexDesc.DepthOrArraySize = overlay == DebugOverlay::QuadOverdrawPass || overlay == DebugOverlay::QuadOverdrawDraw ? 4 : 1;
       uavTexDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
       uavTexDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
       uavTexDesc.Format = DXGI_FORMAT_R32_UINT;
@@ -2016,7 +2016,7 @@ ResourceId D3D12Replay::RenderOverlay(ResourceId texid, FloatVector clearCol, De
       SAFE_RELEASE(overrideDepth);
     }
 
-    if(overlay == DebugOverlay::QuadOverdrawPass)
+    if(overlay == DebugOverlay::QuadOverdrawPass || overlay == DebugOverlay::PixelOverdrawPass)
       m_pDevice->ReplayLog(0, eventId, eReplay_WithoutDraw);
   }
   else if(overlay == DebugOverlay::Depth || overlay == DebugOverlay::Stencil)
