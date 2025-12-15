@@ -1,0 +1,26 @@
+name: Copilot Setup
+
+on:
+  push:
+  pull_request:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  copilot-setup-steps:
+    name: Copilot Setup
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      QT_SELECT: qt5
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+    - name: Install compilation dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libx11-dev mesa-common-dev libgl1-mesa-dev qtbase5-dev libqt5svg5-dev libqt5x11extras5-dev libxcb-keysyms1-dev libx11-xcb-dev cmake g++ libpcre3-dev xvfb
