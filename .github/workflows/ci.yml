@@ -192,7 +192,7 @@ jobs:
         shopt -s globstar
         ln -s $(which sccache) $(dirname $(which sccache))/CL.exe
         ls -la **/*.vcxproj
-        sed -i -e 's/ProgramDatabase/OldStyle/g' **/*.vcxproj
+        sed -i -e 's/ProgramDatabase/OldStyle/g' -e 's/>Use</>NotUsing</g' **/*.vcxproj
         #CCACHE_COMPILER=cl \
         msbuild.exe renderdoc.sln -p:Configuration=${{ matrix.configuration }} -p:Platform=${{ matrix.platform }} -p:PlatformToolset=${{ matrix.toolset }} \
           -p:VSPythonOverridePath='C:\Python313' -p:CLToolPath=$(dirname $(which sccache)) -p:UseMultiToolTask=true #-p:DebugInformationFormat=OldStyle
