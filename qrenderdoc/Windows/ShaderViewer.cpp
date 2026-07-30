@@ -280,7 +280,7 @@ ShaderViewer::ShaderViewer(ICaptureContext &ctx, QWidget *parent)
     m_DisassemblyView =
         MakeEditor(lit("scintillaDisassem"), QString(),
                    m_Ctx.APIProps().pipelineType == GraphicsAPI::Vulkan ? SCLEX_GLSL : SCLEX_HLSL);
-    m_DisassemblyView->setReadOnly(true);
+    m_DisassemblyView->setReadOnly(false);
 
     QObject::connect(m_DisassemblyView, &ScintillaEdit::keyPressed, this,
                      &ShaderViewer::readonly_keyPressed);
@@ -622,7 +622,7 @@ void ShaderViewer::debugShader(const ShaderReflection *shader, ResourceId pipeli
         // read-only applies to us too!
         m_DisassemblyView->setReadOnly(false);
         SetTextAndUpdateMargin0(m_DisassemblyView, disasm);
-        m_DisassemblyView->setReadOnly(true);
+        //m_DisassemblyView->setReadOnly(true);
       });
     });
   }
@@ -1671,7 +1671,7 @@ ScintillaEdit *ShaderViewer::AddFileScintilla(const QString &name, const QString
       MakeEditor(lit("scintilla") + name, text,
                  encoding == ShaderEncoding::HLSL || encoding == ShaderEncoding::Slang ? SCLEX_HLSL
                                                                                        : SCLEX_GLSL);
-  scintilla->setReadOnly(true);
+  //scintilla->setReadOnly(true);
   scintilla->setWindowTitle(name);
   ((QWidget *)scintilla)->setProperty("name", name);
 
@@ -2237,7 +2237,7 @@ void ShaderViewer::disassemble_typeChanged(int index)
 
       m_DisassemblyView->setReadOnly(false);
       SetTextAndUpdateMargin0(m_DisassemblyView, text);
-      m_DisassemblyView->setReadOnly(true);
+      //m_DisassemblyView->setReadOnly(true);
       m_DisassemblyView->emptyUndoBuffer();
       return;
     }
@@ -2258,7 +2258,7 @@ void ShaderViewer::disassemble_typeChanged(int index)
 
     m_DisassemblyView->setReadOnly(false);
     SetTextAndUpdateMargin0(m_DisassemblyView, text);
-    m_DisassemblyView->setReadOnly(true);
+    //m_DisassemblyView->setReadOnly(true);
     m_DisassemblyView->emptyUndoBuffer();
     return;
   }
@@ -2277,7 +2277,7 @@ void ShaderViewer::disassemble_typeChanged(int index)
     GUIInvoke::call(this, [this, disasm]() {
       m_DisassemblyView->setReadOnly(false);
       SetTextAndUpdateMargin0(m_DisassemblyView, disasm);
-      m_DisassemblyView->setReadOnly(true);
+      //m_DisassemblyView->setReadOnly(true);
       m_DisassemblyView->emptyUndoBuffer();
     });
   });
