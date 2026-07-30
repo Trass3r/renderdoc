@@ -116,7 +116,7 @@ void SetDriverForHooks(WrappedOpenGL *driver)
 
 void EnableGLHooks()
 {
-  glhook.enabled = true;
+  //glhook.enabled = true;
 }
 
 void DisableGLHooks()
@@ -273,6 +273,9 @@ static void GLHooked(void *handle, const char *libName)
 
 void GLHook::RegisterHooks()
 {
+  RDCLOG("Not registering OpenGL hooks");
+  return;
+
 #if ENABLED(RDOC_ANDROID)
   // on android if EGL hooking is disabled we're using GLES layering, don't register any GL hooks
   if(!ShouldHookEGL())
